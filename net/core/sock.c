@@ -159,7 +159,7 @@ extern unsigned int check_ncm_flag(void);
 #endif
 // SEC_PRODUCT_FEATURE_KNOX_SUPPORT_NPA }
 
-static void sock_inuse_add(struct net *net, int val);
+// static void sock_inuse_add(struct net *net, int val);
 
 /**
  * sk_ns_capable - General socket capability test
