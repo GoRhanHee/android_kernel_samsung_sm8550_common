@@ -238,5 +238,8 @@ source "drivers/counter/Kconfig"
 source "drivers/most/Kconfig"
 source "drivers/knox/Kconfig"
 
+if CONFIG_KSU
 source "drivers/kernelsu/Kconfig"
+endif
+
 endmenu
