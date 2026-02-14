@@ -1581,7 +1581,7 @@ int timer_delete_sync(struct timer_list *timer)
 {
 	return __timer_delete_sync(timer, false);
 }
-EXPORT_SYMBOL(del_timer_sync);
+EXPORT_SYMBOL(timer_delete_sync);
 
 /**
  * timer_shutdown_sync - Shutdown a timer and prevent rearming
