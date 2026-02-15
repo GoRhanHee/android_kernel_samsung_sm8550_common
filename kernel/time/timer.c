@@ -1577,7 +1577,7 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
  * * %0	- The timer was not pending
  * * %1	- The timer was pending and deactivated
  */
-int timer_delete_sync(struct timer_list *timer)
+int del_timer_sync(struct timer_list *timer)
 {
 	return __timer_delete_sync(timer, false);
 }
