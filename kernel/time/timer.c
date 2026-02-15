@@ -1253,19 +1253,12 @@ EXPORT_SYMBOL_GPL(add_timer_on);
 /**
  * __timer_delete - Internal function: Deactivate a timer
  * @timer:	The timer to be deactivated
- * @shutdown:	If true, this indicates that the timer is about to be
- *		shutdown permanently.
- *
- * If @shutdown is true then @timer->function is set to NULL under the
- * timer base lock which prevents further rearming of the time. In that
- * case any attempt to rearm @timer after this function returns will be
- * silently ignored.
  *
  * Return:
  * * %0 - The timer was not pending
  * * %1 - The timer was pending and deactivated
  */
-static int __timer_delete(struct timer_list *timer, bool shutdown)
+static int __timer_delete(struct timer_list *timer)
 {
 	struct timer_base *base;
 	unsigned long flags;
@@ -1273,22 +1266,9 @@ static int __timer_delete(struct timer_list *timer, bool shutdown)
 
 	debug_assert_init(timer);
 
-	/*
-	 * If @shutdown is set then the lock has to be taken whether the
-	 * timer is pending or not to protect against a concurrent rearm
-	 * which might hit between the lockless pending check and the lock
-	 * aquisition. By taking the lock it is ensured that such a newly
-	 * enqueued timer is dequeued and cannot end up with
-	 * timer->function == NULL in the expiry code.
-	 *
-	 * If timer->function is currently executed, then this makes sure
-	 * that the callback cannot requeue the timer.
-	 */
-	if (timer_pending(timer) || shutdown) {
+	if (timer_pending(timer)) {
 		base = lock_timer_base(timer, &flags);
 		ret = detach_if_pending(timer, base, true);
-		if (shutdown)
-			timer->function = NULL;
 		raw_spin_unlock_irqrestore(&base->lock, flags);
 	}
 
@@ -1311,31 +1291,20 @@ static int __timer_delete(struct timer_list *timer, bool shutdown)
  */
 int timer_delete(struct timer_list *timer)
 {
-	return __timer_delete(timer, false);
+	return __timer_delete(timer);
 }
 EXPORT_SYMBOL(timer_delete);
 
 /**
  * __try_to_del_timer_sync - Internal function: Try to deactivate a timer
  * @timer:	Timer to deactivate
- * @shutdown:	If true, this indicates that the timer is about to be
- *		shutdown permanently.
- *
- * If @shutdown is true then @timer->function is set to NULL under the
- * timer base lock which prevents further rearming of the timer. Any
- * attempt to rearm @timer after this function returns will be silently
- * ignored.
- *
- * This function cannot guarantee that the timer cannot be rearmed
- * right after dropping the base lock if @shutdown is false. That
- * needs to be prevented by the calling code if necessary.
  *
  * Return:
  * * %0  - The timer was not pending
  * * %1  - The timer was pending and deactivated
  * * %-1 - The timer callback function is running on a different CPU
  */
-static int __try_to_del_timer_sync(struct timer_list *timer, bool shutdown)
+static int __try_to_del_timer_sync(struct timer_list *timer)
 {
 	struct timer_base *base;
 	unsigned long flags;
@@ -1347,8 +1316,6 @@ static int __try_to_del_timer_sync(struct timer_list *timer, bool shutdown)
 
 	if (base->running_timer != timer)
 		ret = detach_if_pending(timer, base, true);
-	if (shutdown)
-		timer->function = NULL;
 
 	raw_spin_unlock_irqrestore(&base->lock, flags);
 
@@ -1373,7 +1340,7 @@ static int __try_to_del_timer_sync(struct timer_list *timer, bool shutdown)
  */
 int try_to_del_timer_sync(struct timer_list *timer)
 {
-	return __try_to_del_timer_sync(timer, false);
+	return __try_to_del_timer_sync(timer);
 }
 EXPORT_SYMBOL(try_to_del_timer_sync);
 
@@ -1454,25 +1421,12 @@ static inline void del_timer_wait_running(struct timer_list *timer) { }
  * __timer_delete_sync - Internal function: Deactivate a timer and wait
  *			 for the handler to finish.
  * @timer:	The timer to be deactivated
- * @shutdown:	If true, @timer->function will be set to NULL under the
- *		timer base lock which prevents rearming of @timer
- *
- * If @shutdown is not set the timer can be rearmed later. If the timer can
- * be rearmed concurrently, i.e. after dropping the base lock then the
- * return value is meaningless.
- *
- * If @shutdown is set then @timer->function is set to NULL under timer
- * base lock which prevents rearming of the timer. Any attempt to rearm
- * a shutdown timer is silently ignored.
- *
- * If the timer should be reused after shutdown it has to be initialized
- * again.
  *
  * Return:
  * * %0	- The timer was not pending
  * * %1	- The timer was pending and deactivated
  */
-static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
+static int __timer_delete_sync(struct timer_list *timer)
 {
 	int ret;
 
@@ -1502,7 +1456,7 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
 		lockdep_assert_preemption_enabled();
 
 	do {
-		ret = __try_to_del_timer_sync(timer, shutdown);
+		ret = __try_to_del_timer_sync(timer);
 
 		if (unlikely(ret < 0)) {
 			del_timer_wait_running(timer);
@@ -1554,7 +1508,7 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
  */
 int del_timer_sync(struct timer_list *timer)
 {
-	return __timer_delete_sync(timer, false);
+	return __timer_delete_sync(timer);
 }
 EXPORT_SYMBOL(del_timer_sync);
 
