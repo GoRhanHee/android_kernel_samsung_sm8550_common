@@ -130,6 +130,9 @@
 #define RECLAIMER_LOG(fmt, ...)
 #endif
 
+#ifndef __GENKSYMS__
+#include <trace/hooks/mm.h>
+#endif
 /*
  * Minimum number of threads to boot the kernel
  */
@@ -768,6 +771,7 @@ void __mmdrop(struct mm_struct *mm)
 	mmu_notifier_subscriptions_destroy(mm);
 	check_mm(mm);
 	put_user_ns(mm->user_ns);
+	trace_android_vh_mm_free(mm);
 	free_mm(mm);
 }
 EXPORT_SYMBOL_GPL(__mmdrop);
@@ -1165,6 +1169,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 
 	mm->user_ns = get_user_ns(user_ns);
 	lru_gen_init_mm(mm);
+	trace_android_vh_mm_init(mm);
 	return mm;
 
 fail_nocontext:
