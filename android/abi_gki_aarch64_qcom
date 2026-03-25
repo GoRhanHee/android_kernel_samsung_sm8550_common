@@ -116,6 +116,7 @@
   blk_mq_init_queue
   blk_mq_map_queues
   blk_mq_pci_map_queues
+  blk_mq_quiesce_queue_nowait
   blk_mq_requeue_request
   blk_mq_rq_cpu
   blk_mq_tagset_busy_iter
@@ -2494,6 +2495,10 @@
   __tracepoint_android_vh_ufs_send_uic_command
   __tracepoint_android_vh_ufs_update_sdev
   __tracepoint_android_vh_update_topology_flags_workfn
+  __tracepoint_android_vh_usb_dev_resume
+  __tracepoint_android_vh_usb_dev_suspend
+  __tracepoint_android_vh_xhci_resume
+  __tracepoint_android_vh_xhci_suspend
   __tracepoint_binder_transaction_received
   __tracepoint_block_bio_remap
   __tracepoint_cpu_frequency_limits
