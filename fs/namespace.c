@@ -2261,6 +2261,11 @@ struct vfsmount *clone_private_mount(const struct path *path)
 	if (!check_mnt(old_mnt))
 		goto invalid;
 
+	if (!ns_capable(old_mnt->mnt_ns->user_ns, CAP_SYS_ADMIN)) {
+		up_read(&namespace_sem);
+		return ERR_PTR(-EPERM);
+	}
+
 	if (has_locked_children(old_mnt, path->dentry))
 		goto invalid;
 
@@ -2531,6 +2536,10 @@ static int attach_recursive_mnt(struct mount *source_mnt,
 #else
 		child->mnt.mnt_flags &= ~MNT_LOCKED;
 #endif
+		q = __lookup_mnt(&child->mnt_parent->mnt,
+				 child->mnt_mountpoint);
+		if (q)
+			mnt_change_mountpoint(child, smp, q);
 		commit_tree(child);
 	}
 	put_mountpoint(smp);
@@ -2617,6 +2626,19 @@ static int graft_tree(struct mount *mnt, struct mount *p, struct mountpoint *mp)
 	return attach_recursive_mnt(mnt, p, mp, false);
 }
 
+static int may_change_propagation(const struct mount *m)
+{
+        struct mnt_namespace *ns = m->mnt_ns;
+
+	 // it must be mounted in some namespace
+	 if (IS_ERR_OR_NULL(ns))         // is_mounted()
+		 return -EINVAL;
+	 // and the caller must be admin in userns of that namespace
+	 if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
+		 return -EPERM;
+	 return 0;
+}
+
 /*
  * Sanity check the flags to change_mnt_propagation.
  */
@@ -2653,6 +2675,10 @@ static int do_change_type(struct path *path, int ms_flags)
 		return -EINVAL;
 
 	namespace_lock();
+	err = may_change_propagation(mnt);
+	if (err)
+		goto out_unlock;
+
 	if (type == MS_SHARED) {
 		err = invent_group_ids(mnt, recurse);
 		if (err)
@@ -3099,6 +3125,7 @@ static int do_set_group(struct path *from_path, struct path *to_path)
 
 	namespace_lock();
 
+<<<<<<< HEAD
 	err = -EINVAL;
 	/* To and From must be mounted */
 #ifdef CONFIG_KDP_NS
@@ -3118,6 +3145,13 @@ static int do_set_group(struct path *from_path, struct path *to_path)
 	if (!ns_capable(from->mnt_ns->user_ns, CAP_SYS_ADMIN))
 		goto out;
 	if (!ns_capable(to->mnt_ns->user_ns, CAP_SYS_ADMIN))
+=======
+	err = may_change_propagation(from);
+	if (err)
+		goto out;
+	err = may_change_propagation(to);
+	if (err)
+>>>>>>> android13-5.15.194_r00
 		goto out;
 
 	err = -EINVAL;
@@ -3164,7 +3198,7 @@ static int do_set_group(struct path *from_path, struct path *to_path)
 	if (IS_MNT_SLAVE(from)) {
 		struct mount *m = from->mnt_master;
 
-		list_add(&to->mnt_slave, &m->mnt_slave_list);
+		list_add(&to->mnt_slave, &from->mnt_slave);
 		to->mnt_master = m;
 	}
 
