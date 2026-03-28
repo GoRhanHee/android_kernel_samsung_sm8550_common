@@ -3134,33 +3134,11 @@ static int do_set_group(struct path *from_path, struct path *to_path)
 
 	namespace_lock();
 
-<<<<<<< HEAD
-	err = -EINVAL;
-	/* To and From must be mounted */
-#ifdef CONFIG_KDP_NS
-	if (!is_mounted(((struct kdp_mount *)from)->mnt))
-		goto out;
-	if (!is_mounted(((struct kdp_mount *)to)->mnt))
-		goto out;
-#else
-	if (!is_mounted(&from->mnt))
-		goto out;
-	if (!is_mounted(&to->mnt))
-		goto out;
-#endif
-
-	err = -EPERM;
-	/* We should be allowed to modify mount namespaces of both mounts */
-	if (!ns_capable(from->mnt_ns->user_ns, CAP_SYS_ADMIN))
-		goto out;
-	if (!ns_capable(to->mnt_ns->user_ns, CAP_SYS_ADMIN))
-=======
 	err = may_change_propagation(from);
 	if (err)
 		goto out;
 	err = may_change_propagation(to);
 	if (err)
->>>>>>> android13-5.15.194_r00
 		goto out;
 
 	err = -EINVAL;
