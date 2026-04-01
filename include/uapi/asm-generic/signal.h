@@ -71,15 +71,14 @@ typedef unsigned long old_sigset_t;
 #define __ARCH_HAS_SA_RESTORER
 #endif
 
-#if !defined(__KERNEL__) && !defined(__sigaction_defined)
-#define __sigaction_defined
+#ifndef __KERNEL__
 struct sigaction {
-    __sighandler_t sa_handler;
-    unsigned long sa_flags;
+	__sighandler_t sa_handler;
+	unsigned long sa_flags;
 #ifdef SA_RESTORER
-    __sigrestore_t sa_restorer;
+	__sigrestore_t sa_restorer;
 #endif
-    sigset_t sa_mask;       /* mask last for extensibility */
+	sigset_t sa_mask;		/* mask last for extensibility */
 };
 #endif
 
