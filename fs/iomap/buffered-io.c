@@ -21,6 +21,30 @@
 
 #include "../internal.h"
 
+/* Copied from cleancache.h to avoid ABI_DIFF build break */
+#ifdef CONFIG_CLEANCACHE
+#define cleancache_enabled (1)
+static inline bool cleancache_fs_enabled_mapping(struct address_space *mapping)
+{
+	return mapping->host->i_sb->cleancache_poolid >= 0;
+}
+static inline bool cleancache_fs_enabled(struct page *page)
+{
+	return cleancache_fs_enabled_mapping(page->mapping);
+}
+#else
+#define cleancache_enabled (0)
+#define cleancache_fs_enabled(_page) (0)
+#define cleancache_fs_enabled_mapping(_page) (0)
+#endif
+extern int  __cleancache_get_page(struct page *);
+static inline int cleancache_get_page(struct page *page)
+{
+	if (cleancache_enabled && cleancache_fs_enabled(page))
+		return __cleancache_get_page(page);
+	return -1;
+}
+
 /*
  * Structure allocated for each page or THP when block size < page size
  * to track sub-page uptodate status and I/O completions.
@@ -272,6 +296,15 @@ static loff_t iomap_readpage_iter(const struct iomap_iter *iter,
 
 	if (iomap_block_needs_zeroing(iter, pos)) {
 		zero_user(page, poff, plen);
+		iomap_set_range_uptodate(page, poff, plen);
+		goto done;
+	}
+
+	if (iomap->type == IOMAP_MAPPED)
+		SetPageMappedToDisk(page);
+
+	if (cleancache_get_page(page) == 0) {
+		BUG_ON(iomap->type != IOMAP_MAPPED);
 		iomap_set_range_uptodate(page, poff, plen);
 		goto done;
 	}

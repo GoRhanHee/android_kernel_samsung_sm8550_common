@@ -1787,6 +1787,7 @@ static void handle_cmd_completion(struct xhci_hcd *xhci,
 	cmd_trb = xhci->cmd_ring->dequeue;
 
 	trace_xhci_handle_command(xhci->cmd_ring, &cmd_trb->generic);
+	
 
 	cmd_comp_code = GET_COMP_CODE(le32_to_cpu(event->status));
 
