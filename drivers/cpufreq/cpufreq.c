@@ -2534,7 +2534,7 @@ EXPORT_SYMBOL(cpufreq_get_policy);
 
 #include <asm/timex.h>
 static int max_freqs[4];
-module_param_array(max_freqs, int, NULL, 440);
+module_param_array(max_freqs, int, NULL, 0440);
 
 static void cpufreq_sec_limit_max(struct cpufreq_policy_data *new_data)
 {
@@ -2558,7 +2558,7 @@ static void cpufreq_sec_limit_max(struct cpufreq_policy_data *new_data)
 }
 
 static int min_freqs[4];
-module_param_array(min_freqs, int, NULL, 440);
+module_param_array(min_freqs, int, NULL, 0440);
 
 static void cpufreq_sec_limit_min(struct cpufreq_policy_data *new_data)
 {
