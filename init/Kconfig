@@ -348,6 +348,13 @@ config DEFAULT_INIT
 	  locations (e.g. /sbin/init, etc). If this is empty, we will just use
 	  the fallback list when init= is not passed.
 
+config AOSP
+	bool "AOSP ROM compatibility"
+	default n
+	help
+	  Build the AOSP kernel profile. Device-specific AOSP interfaces are
+	  selected by the matching configuration in the MSM kernel tree.
+
 config DEFAULT_HOSTNAME
 	string "Default hostname"
 	default "(none)"
