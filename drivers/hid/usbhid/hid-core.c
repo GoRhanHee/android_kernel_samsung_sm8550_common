@@ -286,9 +286,10 @@ static void hid_irq_in(struct urb *urb)
 		usbhid_mark_busy(usbhid);
 		if (!test_bit(HID_RESUME_RUNNING, &usbhid->iofl)) {
 #ifdef CONFIG_USB_DEBUG_DETAILED_LOG
-			status = hid_input_report(urb->context, HID_INPUT_REPORT,
-					 urb->transfer_buffer,
-					 urb->actual_length, 1);
+			status = hid_safe_input_report(urb->context, HID_INPUT_REPORT,
+						       urb->transfer_buffer,
+						       urb->transfer_buffer_length,
+						       urb->actual_length, 1);
 			if (status == 0) {
 				if (usbhid->in_err_isr) {
 					usbhid->in_err_isr = 0;
@@ -304,9 +305,9 @@ static void hid_irq_in(struct urb *urb)
 						, urb->actual_length);
 			}
 #else
-			hid_input_report(urb->context, HID_INPUT_REPORT,
-					 urb->transfer_buffer,
-					 urb->actual_length, 1);
+			hid_safe_input_report(urb->context, HID_INPUT_REPORT,
+					      urb->transfer_buffer, urb->transfer_buffer_length,
+					      urb->actual_length, 1);
 #endif
 			/*
 			 * autosuspend refused while keys are pressed
@@ -515,9 +516,10 @@ static void hid_ctrl(struct urb *urb)
 	switch (status) {
 	case 0:			/* success */
 		if (usbhid->ctrl[usbhid->ctrltail].dir == USB_DIR_IN)
-			hid_input_report(urb->context,
+			hid_safe_input_report(urb->context,
 				usbhid->ctrl[usbhid->ctrltail].report->type,
-				urb->transfer_buffer, urb->actual_length, 0);
+				urb->transfer_buffer, urb->transfer_buffer_length,
+				urb->actual_length, 0);
 		break;
 	case -ESHUTDOWN:	/* unplug */
 		unplug = 1;
