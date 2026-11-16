@@ -51,6 +51,7 @@
 #include <linux/sched/mm.h>
 #include <linux/ratelimit.h>
 #include <linux/memfd.h>
+#include <linux/wrapfd.h>
 
 #include <linux/uaccess.h>
 #include <asm/cacheflush.h>
@@ -3070,6 +3071,14 @@ SYSCALL_DEFINE5(remap_file_pages, unsigned long, start, unsigned long, size,
 		if (!next)
 			goto out;
 	}
+
+	/*
+	 * Remapping pages of the wrapfd is not supported since vma->vm_file
+	 * points to the file object representing the wrapped content and not
+	 * the wrapfd.
+	 */
+	if (unlikely(is_wrapfd_vma(vma)))
+		goto out;
 
 	prot |= vma->vm_flags & VM_READ ? PROT_READ : 0;
 	prot |= vma->vm_flags & VM_WRITE ? PROT_WRITE : 0;
